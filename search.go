@@ -31,6 +31,9 @@ func main() {
 
 
 	app := iris.Default()
+	tmpl := iris.HTML( "./views" , ".html")
+	tmpl.Reload(true)
+	app.RegisterView( tmpl )
 
 	app.Handle("GET" , "/" , func( ctx iris.Context ){
 		code := ctx.Params().Get("code")
@@ -76,8 +79,7 @@ func main() {
 		}
 
 
-
-		ctx.HTML("hello world")
+		ctx.View("search.html")
 	})
 
 	app.Get( "/ping" , func( ctx iris.Context ){
