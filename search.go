@@ -35,14 +35,14 @@ func main() {
 	tmpl.Reload(true)
 	app.RegisterView( tmpl )
 
-	app.Handle("GET" , "/" , func( ctx iris.Context ){
+	app.Get("/" , func( ctx iris.Context ){
 		code := ctx.Params().Get("code")
 
 		var  filePath string = GetCurrentDirectory() + PathSeparator + MdFile["CodeMd"]
+		filePath = "./" + MdFile["CodeMd"]
 		if isExists( filePath ) {
 			fmt.Println( filePath + " exists")
 		} else {
-			ctx.HTML("not thing found")
 			_  , err := os.Create( filePath)
 			if err != nil {
 				log.Fatal( err )
@@ -60,6 +60,7 @@ func main() {
 		lineRd := bufio.NewReader( mdFile)
 		for {
 			line , err := lineRd.ReadString( '\n' )
+			ctx.HTML( line )
 			line = strings.TrimSpace( line )
 			if err != nil {
 				if err == io.EOF {
