@@ -16,8 +16,7 @@ type CodeModel struct {
 	Desc string
 }
 
-var MdFile = map[string]string{"CodeMd":"code.md"}
-
+var MdFile = map[string]string{"CodeMd": "code.md"}
 
 var PathSeparator string
 
@@ -29,39 +28,40 @@ func main() {
 		PathSeparator = "\\"
 	}
 
-
 	app := iris.Default()
-	tmpl := iris.HTML( "./views" , ".html")
+	tmpl := iris.HTML("./views", ".html")
 	tmpl.Reload(true)
-	app.RegisterView( tmpl )
+	app.RegisterView(tmpl)
 
-	app.Get("/" , func( ctx iris.Context ){
-		code := ctx.Params().Get("code")
-
-		var  filePath string = GetCurrentDirectory() + PathSeparator + MdFile["CodeMd"]
+	app.Get("/", func(ctx iris.Context) {
+		//code := ctx.Params().Get("code")
+		code := ctx.URLParam("code")
+		fmt.Println( code )
+		var filePath string = GetCurrentDirectory() + PathSeparator + MdFile["CodeMd"]
 		filePath = "./" + MdFile["CodeMd"]
-		if isExists( filePath ) {
-			fmt.Println( filePath + " exists")
+		if isExists(filePath) {
+			fmt.Println(filePath + " exists")
 		} else {
-			_  , err := os.Create( filePath)
+			_, err := os.Create(filePath)
 			if err != nil {
-				log.Fatal( err )
-				panic( "init file error")
+				log.Fatal(err)
+				panic("init file error")
 			}
 		}
-		mdFile , err := os.OpenFile( filePath , os.O_RDWR | os.O_CREATE , 0 )
+		mdFile, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0)
 
 		if err != nil {
-			log.Fatalln( "read md file fail" , err )
+			log.Fatalln("read md file fail", err)
 		}
 		defer mdFile.Close()
 
 		//line := make([]byte , 4096 )
-		lineRd := bufio.NewReader( mdFile)
+		lineRd := bufio.NewReader(mdFile)
+		var codeLists map[string]string
+		codeLists = make( map[string]string)
 		for {
-			line , err := lineRd.ReadString( '\n' )
-			ctx.HTML( line )
-			line = strings.TrimSpace( line )
+			line, err := lineRd.ReadString('\n')
+			line = strings.TrimSpace(line)
 			if err != nil {
 				if err == io.EOF {
 					fmt.Println("file read ok")
@@ -71,49 +71,57 @@ func main() {
 				}
 				//close
 			}
+			arr := strings.Split( line , "|")
+			fmt.Println( code )
 			if code != "" {
 				//如果code不为空
+				if code == arr[0 ] {
+					codeLists[ arr[0] ] = arr[1]
+				}
 			} else {
-
+				if len( arr ) > 1 {
+					codeLists[ arr[0] ] = arr[1]
+				} else {
+					codeLists[ arr[0] ] = ""
+				}
 			}
-			fmt.Println(line)
 		}
-
+		ctx.ViewData("codes", codeLists)
 
 		ctx.View("search.html")
 	})
 
-	app.Get( "/ping" , func( ctx iris.Context ){
+	app.Get("/ping", func(ctx iris.Context) {
 		ctx.WriteString("pong")
 	})
 
-	app.Get("/hello" , func( ctx iris.Context) {
-		ctx.JSON( iris.Map{"message":"Hello iris web frameword."})
+	app.Get("/hello", func(ctx iris.Context) {
+		ctx.JSON(iris.Map{"message": "Hello iris web frameword."})
 	})
 
-	app.Run( iris.Addr(":8080"))
-	iris.WithoutServerError( iris.ErrServerClosed )
+	app.Run(iris.Addr(":8080"))
+	iris.WithoutServerError(iris.ErrServerClosed)
 
 	//a := blackfriday.Run( input )
 }
 
-func createDir ( dir string ) (bool , error) {
-	dirPath := filepath.Dir( dir )
-	if !isExists( dirPath ) {
-		err := os.MkdirAll( dirPath , os.ModePerm)
+func createDir(dir string) (bool, error) {
+	dirPath := filepath.Dir(dir)
+	if !isExists(dirPath) {
+		err := os.MkdirAll(dirPath, os.ModePerm)
 		if err != nil {
-			return false , err
+			return false, err
 		}
 	}
-	return true , nil
+	return true, nil
 }
 
 /**
  * 文件是否存在
  */
 func isExists(path string) bool {
-	path = strings.Replace( path , "//" , "/" , 0 )
-	fmt.Println( path )
+	path = strings.Replace(path, "//", "/", 0)
+	fmt.Println(path)
 	_, err := os.Stat(path) //os.Stat获取文件信息
 	if err != nil {
 		if os.IsExist(err) {
@@ -124,9 +132,8 @@ func isExists(path string) bool {
 	return true
 }
 
-
 func GetCurrentDirectory() string {
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))  //返回绝对路径  filepath.Dir(os.Args[0])去除最后一个元素的路径
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0])) //返回绝对路径  filepath.Dir(os.Args[0])去除最后一个元素的路径
 	if err != nil {
 		log.Fatal(err)
 	}
